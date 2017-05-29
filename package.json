@@ -15,10 +15,10 @@
   },
   "graphql": {
     "request": {
-    "url": "https://api.graph.cool/relay/v1/cj30uudtt5r350180q44q1hka"
-  }
-},
-"scripts": {
+      "url": "https://api.graph.cool/relay/v1/cj30uudtt5r350180q44q1hka"
+    }
+  },
+  "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
