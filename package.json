@@ -3,10 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "auth0-js": "8.2.0",
+    "auth0-lock": "10.11.0",
+    "babel-plugin-relay": "^1.0.1",
+    "eslint-plugin-jsx-a11y": "5.0.3",
+    "konva": "1.3.0",
     "material-ui": "0.16.7",
-    "react": "^15.5.4",
-    "react-dom": "^15.5.4",
-    "react-tap-event-plugin": "2.0.1"
+    "react": "15.4.2",
+    "react-dom": "15.4.2",
+    "react-konva": "1.1.1",
+    "react-relay": "0.10.0",
+    "react-relay-network-layer": "1.3.9",
+    "react-router-relay": "0.13.5",
+    "react-tap-event-plugin": "2.0.1",
+    "styled-components": "1.4.2"
   },
   "devDependencies": {
     "babel-plugin-react-relay": "0.10.0",
@@ -15,10 +25,18 @@
   },
   "graphql": {
     "request": {
-    "url": "https://api.graph.cool/relay/v1/cj30uudtt5r350180q44q1hka"
-  }
+      "url": "https://api.graph.cool/relay/v1/cj30uudtt5r350180q44q1hka"
+    }
+  },
+  "babel": {
+  "plugins": [
+    "react-relay"
+  ],
+  "presets": [
+    "react-app"
+  ]
 },
-"scripts": {
+  "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
