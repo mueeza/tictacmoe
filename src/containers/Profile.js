@@ -1,6 +1,5 @@
 import React, { Component } from "react";
-//import the style stuff we took at stlyed profile
-//this is the place we store the record of games
+import Relay from "react-relay";
 import {
 	Container,
 	Name,
@@ -9,58 +8,30 @@ import {
 	GameRecord,
 	Column,
 	ColumnLabels
-} from "../styled/Profile";
+} from "../styled/ProfileStyled";
 
 class Profile extends Component {
-	//fake/dummy info until we start doing database stuff
-	static defaultProps = {
-		user: {
-			email: "USER_EMAIL",
-			games: [
-				//an array that holds all the recent game infromation
-				{
-					winner: true,
-					createdAt: "12/25/2017",
-					id: "0001"
-				},
-				{
-					winner: true,
-					createdAt: "12/29/2017", //BOI ITS YAH BURDAY.. YEAH SHAWTY ITS YA BUTHDAY.. Kill me why isnt it working
-					id: "0002" //fake id
-				},
-				{
-					winner: true,
-					createdAt: "12/27/2016",
-					id: "0003"
-				}
-			]
-		}
-	};
-
 	//fetch data
 	get records() {
 		//i need it to return an array of my records
 		//if tru = win and if not u dont
 		//my four columns = column stuff
 		//robot is //dummy info
-		return this.props.user.games.map((game, index) => {
+		return this.props.viewer.user.p1games.edges.map((edge, index) => {
+			let { node: game } = edge;
 			return (
-				<GameRecord key={index} index={index}>
-
+				<GameRecord key={game.id} index={index}>
 					<Column>
 						{game.winner ? "Won!" : "Didn't win"}
-						{" "}
-
-						{" "}
 					</Column>
 					<Column>
-						"ROBOT"{" "}
+						{game.player1Guess}
 					</Column>
 					<Column>
-						"No"
+						{game.player1GuessCorrect ? "Yes" : "No"}
 					</Column>
 					<Column>
-						{game.createdAt}
+						{new Date(game.createdAt).toLocaleDateString()}
 					</Column>
 				</GameRecord>
 			);
@@ -68,8 +39,8 @@ class Profile extends Component {
 	}
 
 	render() {
-		//stary using style componenets
-		let { email } = this.props.user; //declare where u getting that email.. email is property of user
+		//start using style componenets
+		let { email } = this.props.viewer.user; //declare where u getting that email.. email is property of user
 		return (
 			<Container>
 				<Name>
@@ -77,7 +48,7 @@ class Profile extends Component {
 				</Name>
 				<GameList>
 					<GameListHeader>
-						MyGames
+						My Games
 					</GameListHeader>
 					<ColumnLabels>
 						<Column>
@@ -99,7 +70,32 @@ class Profile extends Component {
 		);
 	}
 }
-
 //the geuss refers to teh geuss about who u were competing against
 
-export default Profile;
+//if no one is signed in return will be null
+//this gets the user thats currentky working
+export default Relay.createContainer(Profile, {
+	fragments: {
+		viewer: () => Relay.QL`
+        fragment on Viewer {
+          user {
+            id
+            email
+            p1games (first: 10) {
+              edges {
+                node {
+                  id
+                  createdAt
+                  winner {
+                    id
+                  }
+                  p1Guess
+                  p1GuessCorrect
+                }
+              }
+            }
+          }
+        }
+      `
+	}
+});

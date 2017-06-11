@@ -1,14 +1,18 @@
 import React, { Component } from "react";
+import Relay from "react-relay";
 import { Stage } from "react-konva";
-import { Board, Squares } from "../styled/TicTacMoe";
+import Board from "../styled/Board";
+import Squares from "../styled/Squares";
+import TuringTest from "../styled/TuringTest";
+import CreateGame from "../mutations/CreateGame";
 
-class TicTacMoe extends Component {
+class TicTacToe extends Component {
 	//we need to check if someone won so come up with all the combos and check .. u need hard code this lol
 	constructor(props) {
 		super(props);
 		this.combos = [
-			[0, 1, 2], //across the top
-			[3, 4, 5], //accross the middle
+			[0, 1, 2],
+			[3, 4, 5],
 			[6, 7, 8],
 			[0, 3, 6],
 			[1, 4, 7],
@@ -17,7 +21,6 @@ class TicTacMoe extends Component {
 			[2, 4, 6]
 		];
 	}
-
 	//how many rows and colums
 	state = {
 		rows: 3,
@@ -36,6 +39,7 @@ class TicTacMoe extends Component {
 		let size = height < width ? height * 0.8 : width * 0.8; //make sure the board fits on teh screen teh question sign means set size and the : means or
 		let rows = this.state.rows;
 		let unit = size / rows; //size of the squares
+
 		let coordinates = [];
 		//this loops will leave us with 9 sets of cooridnated
 		for (let y = 0; y < rows; y++) {
@@ -43,35 +47,27 @@ class TicTacMoe extends Component {
 				coordinates.push([x * unit, y * unit]);
 			}
 		}
-
+		//when the components mount this aS variables
 		this.setState({
 			size,
 			rows,
 			unit,
 			coordinates
 		});
-
-		//when the components mount this aS variables
-		this.setState({
-			size,
-			rows,
-			unit
-		});
 	}
 
-	move = (index, marker) => {
-		this.setState((prevState, prop) => {
+	move = (moveIndex, mark) => {
+		this.setState((prevState, props) => {
 			//this.setstate holds all the info on our game
-			let { gameState, yourTurn, gameOver, winner } = prevState; //bring in some variables.. prev state basically looks at the state before this change is about to ahppen
+			let { gameState, yourTurn, gameOver, winner } = prevState;
 			yourTurn = !yourTurn;
-			gameState.splice(index, 1, marker); //splice method looks at index that we passthrough at top finds a element/array  and look to what need to be replaced
+			gameState.splice(moveIndex, 1, mark); //splice method looks at index that we passthrough at top finds a element/array  and look to what need to be replaced
 			let foundWin = this.winChecker(gameState); //check if theres been a winner links back to the winChecker thing we made before
 			if (foundWin) {
 				winner = gameState[foundWin[0]]; //if a win was found is the player whos mark found in that array
 			}
 			if (foundWin || !gameState.includes(false)) {
-				//if win found or or did not find blank squares game over
-				gameOver = true;
+				gameOver = true; //if win found or or did not find blank squares game over
 			}
 			if (!yourTurn && !gameOver) {
 				//if not ur turn and game notover
@@ -85,6 +81,20 @@ class TicTacMoe extends Component {
 				win: foundWin || false, //if win found should be set to that but if not its still false
 				winner
 			};
+		});
+	};
+
+	//checks if someone has won or not
+	winChecker = gameState => {
+		let combos = this.combos; // makes it shorter to refer to combos
+		return combos.find(combo => {
+			//looks at he combos array and if my specification are met  then it will return the array element that met the specification (looks at big combo) return a single element from combo
+			let [a, b, c] = combo;
+			return (
+				gameState[a] === gameState[b] &&
+				gameState[a] === gameState[c] &&
+				gameState[a]
+			); //basically if abc are the same thing and none are false you got a win
 		});
 	};
 
@@ -117,23 +127,36 @@ class TicTacMoe extends Component {
 		return Math.floor(Math.random() * (max - min)) + min;
 	};
 
-	//checks if someone has won or not
-	winChecker = gameState => {
-		let combos = this.combos; // makes it shorter to refer to combos
-		return combos.find(combo => {
-			//looks at he combos array and if my specification are met  then it will return the array element that met the specification (looks at big combo) return a single element from combo
-			let [a, b, c] = combo;
-			return (
-				gameState[a] === gameState[b] &&
-				gameState[a] === gameState[c] &&
-				gameState[a]
-			); //basically if abc are the same thing and none are false you got a win
-		});
+	//if game over go index at the turingtest.js in styled
+	makeTuringTest = () => {
+		if (this.state.gameOver) {
+			return <TuringTest recordGame={this.recordGame} />;
+		}
 	};
 
-	turingTest = () => {};
-
-	recordGame = () => {};
+	recordGame = p1guess => {
+		let { self, relay } = this.props;
+		let { winner, ownMark } = this.state;
+		if (self) {
+			let winnerId = winner === ownMark ? self.id : undefined;
+			let p1guessCorrect = "ROBOT" ? true : false;
+			relay.commitUpdate(
+				new CreateGame({
+					self,
+					winnerId,
+					p1guess,
+					p1guessCorrect
+				})
+			);
+		}
+		this.setState({
+			gameState: new Array(9).fill(false),
+			gameOver: false,
+			yourTurn: true,
+			winner: false,
+			win: false
+		});
+	};
 
 	render() {
 		let {
@@ -149,8 +172,8 @@ class TicTacMoe extends Component {
 		} = this.state; //the win lets u know where it toook place ad game over is a boolean
 		return (
 			<div>
-				<Stage width={size} height={size}>
-					<Board unit={unit} rows={rows} size={size} />
+				<Stage height={size} width={size}>
+					<Board unit={unit} size={size} rows={rows} />
 					<Squares
 						unit={unit}
 						coordinates={coordinates}
@@ -162,9 +185,21 @@ class TicTacMoe extends Component {
 						move={this.move}
 					/>
 				</Stage>
+				{this.makeTuringTest()}
 			</div>
 		);
 	}
 }
 
-export default TicTacMoe;
+//if no one is signed in return will be null
+//this gets the user thats currentky working
+
+export default Relay.createContainer(TicTacToe, {
+	fragments: {
+		self: () => Relay.QL`
+        fragment on User {
+          id
+        }
+      `
+	}
+});

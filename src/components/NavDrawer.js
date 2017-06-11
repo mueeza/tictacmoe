@@ -1,52 +1,58 @@
 import React, { Component } from "react"; //framework
 import Drawer from "material-ui/Drawer"; // rest is importing libraries and dependencies u can use
-import MenuItem from "material-ui/MenuItem";
 import Divider from "material-ui/Divider";
+import MenuLink from "../styled/MenuLink";
+import DrawerToggleButton from "../styled/DrawerToggleButton"; //this will go in the style
+import AuthButton from "../styled/AuthButton";
 
-import { Link } from "react-router";
-import { NavToggleButton } from "../styled/NavDrawer"; //this will go in the style
 // create a nav Drawer
 // imported from material-ui
 class NavDrawer extends Component {
 	state = {
-		open: false,
+		open: true,
 		width: 250
 	};
 
 	toggle = () => {
-		this.setState((prevState, props) => {
+		this.setState(prevState => {
 			return {
 				open: !prevState.open
 			};
 		});
 	};
 
+	get showIfAuthenticated() {
+		if (this.props.authenticated) {
+			return (
+				<MenuLink
+					to={"/profile"}
+					onTouchTap={this.toggle}
+					primaryText={"Profile"}
+				/>
+			);
+		}
+	}
+
 	render() {
 		return (
 			<div>
-				<NavToggleButton
-					toggle={this.toggle}
-					width={this.state.width}
+				<DrawerToggleButton
+					onTouchTap={this.toggle}
 					open={this.state.open}
+					width={this.state.width}
 				/>
-				<Drawer open={this.state.open}>
-					<div
-						style={{
-							height: "200px",
-							width: "100%",
-							backgroundColor: "salmon"
-						}}
-					>
-						LoginContainer
-					</div>
+				<Drawer open={this.state.open} width={this.state.width}>
+					<AuthButton
+						auth={this.props.auth}
+						authenticated={this.props.authenticated}
+					/>
 					<Divider />
-					<Link to={"/"}>
-						<MenuItem onTouchTap={this.toggle} primaryText={"Play"} />
-					</Link>
-					<Link to={"/profile"}>
-						<MenuItem onTouchTap={this.toggle} primaryText={"Profile"} />
-					</Link>
+					<MenuLink to={"/"} onTouchTap={this.toggle} primaryText={"Play"} />
+
+					{this.showIfAuthenticated}
+
 				</Drawer>
+
 			</div>
 		);
 	}

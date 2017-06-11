@@ -7,14 +7,13 @@ import Routes from "./routes";
 import Relay from "react-relay";
 import useRelay from "react-router-relay";
 import { RelayNetworkLayer, urlMiddleware } from "react-relay-network-layer";
-import { relayApi } from "./config/endpoints";
+import { relayApiUrl } from "./config/urls";
 import auth from "./utils/auth";
 
-const createHeaders = () => {
-	let idToken = auth.getToken();
+const createHeaders = idToken => {
 	if (idToken) {
 		return {
-			Authorization: `Bearer ${idToken}` //returns as an object
+			Authorization: "Bearer " + idToken //returns as an object
 		};
 	} else {
 		return {};
@@ -25,12 +24,14 @@ Relay.injectNetworkLayer(
 	new RelayNetworkLayer(
 		[
 			urlMiddleware({
-				url: req => relayApi
+				url: req => relayApiUrl
 			}),
 			next => req => {
+				let idToken = auth.getToken();
+				let headers = createHeaders(idToken);
 				req.headers = {
 					...req.headers,
-					...createHeaders()
+					...headers
 				};
 				return next(req);
 			}

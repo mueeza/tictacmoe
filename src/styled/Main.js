@@ -20,10 +20,12 @@ export const Container = styled.div`
 	`}
 `;
 
-export const Main = props => {
+const Main = props => {
 	return (
 		<Container>
 			{props.children}
 		</Container>
 	);
 };
+
+export default Main;

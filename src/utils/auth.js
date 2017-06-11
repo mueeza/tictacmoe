@@ -1,52 +1,78 @@
 import Auth0Lock from "auth0-lock";
-const authDomain = "mueeza.auth0.com";
-const clientId = "yRflnO71SMxjfaDSIomcETAbf1FL9V4B";
+import Relay from "react-relay";
+import { auth0Domain, auth0ClientId } from "../config/auth0";
+import { cyan500 } from "material-ui/styles/colors";
+import CreateUser from "../mutations/CreateUser"; //our other file
+import SigninUser from "../mutations/SigninUser";
 
 class AuthService {
-	constructor() {
-		this.lock = new Auth0Lock(clientId, authDomain, {
+	constructor(clientId, domain) {
+		this.lock = new Auth0Lock(clientId, domain, {
 			auth: {
 				params: {
 					scope: "openid email" //scope is what they can do or have acess to
 				}
+			},
+			theme: {
+				logo: `${window.location.origin}/logo.png`,
+				primaryColor: cyan500
+			},
+			languageDictionary: {
+				title: "TicTacMoe"
 			}
 		});
 
 		this.showLock = this.showLock.bind(this);
 
-		this.lock.on("authenticated", this.authProcess.bind(this)); //when authenticates run teh func below
+		this.lock.on("authenticated", this.authProcess.bind(this));
 	}
-
-	authProcess = authResult => {
-		console.log(authResult);
-	};
 
 	showLock() {
 		this.lock.show();
 	}
 
 	setToken = authFields => {
-		//get token and send to other web
 		let { idToken, exp } = authFields;
 		localStorage.setItem("idToken", idToken);
 		localStorage.setItem("exp", exp * 1000);
 	};
 
-	isCurrent = () => {
+	authProcess = authResult => {
+		const { exp, email } = authResult.idTokenPayload;
+		console.log(email);
+		const idToken = authResult.idToken;
+
+		this.signinUser({
+			idToken,
+			email,
+			exp
+		}).then(
+			success => success,
+			rejected => {
+				this.createUser({
+					idToken,
+					email,
+					exp
+				}).then();
+			}
+		);
+	};
+
+	isCurrent() {
 		let expString = localStorage.getItem("exp");
 		if (!expString) {
 			localStorage.removeItem("idToken");
 			return false;
 		}
 		let now = new Date();
-		let exp = new Date(parseInt(expString, 10)); //10 is radix parameter
+		let exp = new Date(expString);
 		if (exp < now) {
 			this.logout();
 			return false;
 		} else {
 			return true;
 		}
-	};
+	}
 
 	getToken() {
 		let idToken = localStorage.getItem("idToken");
@@ -59,13 +85,57 @@ class AuthService {
 		}
 	}
 
-	logout = () => {
+	logout() {
 		localStorage.removeItem("idToken");
 		localStorage.removeItem("exp");
-		window.location.reload(true);
+		location.reload();
+	}
+
+	createUser = authFields => {
+		return new Promise((resolve, reject) => {
+			Relay.Store.commitUpdate(
+				new CreateUser({
+					email: authFields.email,
+					idToken: authFields.idToken,
+					name: authFields.name
+				}),
+				{
+					onSuccess: response => {
+						this.signinUser(authFields);
+						resolve(response);
+					},
+					onFailure: response => {
+						console.log("CreateUser error", response);
+						reject(response);
+					}
+				}
+			);
+		});
+	};
+
+	//rceate user promise for signinUser
+	//look at the porop i want to bring in
+	signinUser = authFields => {
+		let { idToken } = authFields;
+		return new Promise((resolve, reject) => {
+			Relay.Store.commitUpdate(
+				new SigninUser({
+					idToken
+				}),
+				{
+					onSuccess: response => {
+						this.setToken(authFields);
+						resolve(idToken);
+					},
+					onFailure: response => {
+						reject(response.getError());
+					}
+				}
+			);
+		});
 	};
 }
 
-const auth = new AuthService();
+const auth = new AuthService(auth0ClientId, auth0Domain);
 
 export default auth;
